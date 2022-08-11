@@ -479,7 +479,8 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                     # calculate the next step
                     if j < 48:
                         if df_prognose.iloc[j + 7, i] > 0:
-                            df_prognose.iloc[j + 7, i + 1] = df_prognose.iloc[j + 7, i] * (1 + (df_prognose.iloc[0, i + 1]))
+                            df_prognose.iloc[j + 7, i + 1] = df_prognose.iloc[j + 7, i] * (
+                                        1 + (df_prognose.iloc[0, i + 1]))
                         else:
                             # df_prognose.iloc[j + 6, i + 1] = df_prognose.iloc[j + 6, i]
                             df_prognose.iloc[j + 7, i + 2] = 0
@@ -490,7 +491,7 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                     if j == 48:
                         # initiate new lists. The individual high water mark. individual performance fee
                         fund_value = 0
-                        print(i + 1, individual_hwm_list[0])
+                        print(i + 1, individual_hwm_list)
                         if i == 0:
                             # individual_hwm_list[0] = hwm_start_value
                             for k in range(i + 2):
@@ -499,14 +500,27 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                         if k == (i + 1):
                                             individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             fund_value += df_prognose.iloc[k + 7, i + 1] + df_prognose.iloc[2, i + 1]
-
                                             df_prognose.iloc[6, i + 1] = fund_value
 
                                             # outflow in the lead serie for the hwm
-                                            individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (
+                                            #             individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                            # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
 
-                                            df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
-                                            df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[4, i + 1]
+                                            #   new
+                                            # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                            df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                            sum_hwm = df_hwm.sum()
+                                            partial_df_hwm = df_hwm / sum_hwm
+                                            # The money amount that is substracted from the hwm and the outflow is then multiplied by the (hwm / next value)
+                                            new_df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                        partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+                                            df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            individual_hwm_list = list(df_hwm.iloc[:, 0])
+
+                                            df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[
+                                                4, i + 1]
                                         else:
                                             input_value = individual_hwm_list[k]
                                             output_value = df_prognose.iloc[k + 7, i + 1]
@@ -516,7 +530,8 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             individual_per_fee_list[k] = performance_fee_fund
 
                                             if input_value >= 0:
-                                                df_prognose.iloc[k + 7, i + 1] = df_prognose.iloc[k + 7, i + 1] - performance_fee_fund
+                                                df_prognose.iloc[k + 7, i + 1] = df_prognose.iloc[
+                                                                                     k + 7, i + 1] - performance_fee_fund
                                             else:
                                                 df_prognose.iloc[k + 7, i + 1] = df_prognose.iloc[k + 7, i]
 
@@ -534,8 +549,22 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             # individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             fund_value += df_prognose.iloc[k + 7, i + 1]
                                             df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                            # individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
-                                            df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (
+                                            #             individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                            # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+
+                                            #   new
+                                            # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                            df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                            sum_hwm = df_hwm.sum()
+                                            partial_df_hwm = df_hwm / sum_hwm
+                                            # The money amount that is substracted from the hwm and the outflow is then multiplied by the (hwm / next value)
+                                            new_df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                        partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+                                            df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            individual_hwm_list = list(df_hwm.iloc[:, 0])
+
                                             df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i]
 
                                         else:
@@ -550,9 +579,26 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             fund_value += df_prognose.iloc[k + 7, i + 1]
                                             df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                            individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
-                                            df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
-                                            df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[4, i + 1]
+
+                                            # #   old
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                            # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+
+                                            #   new
+                                            # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                            df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                            sum_hwm = df_hwm.sum()
+                                            partial_df_hwm = df_hwm / sum_hwm
+                                            # The money amount that is substracted from the hwm and the outflow is then multiplied by the (hwm / next value)
+                                            new_df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                        partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+                                            df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            individual_hwm_list = list(df_hwm.iloc[:, 0])
+
+                                            df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[
+                                                4, i + 1]
+
 
                                         else:
                                             input_value = individual_hwm_list[k]
@@ -563,7 +609,8 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             individual_per_fee_list[k] = performance_fee_fund
                                             individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             if input_value >= 0:
-                                                df_prognose.iloc[k + 7, i + 1] = individual_hwm_list[k] - individual_per_fee_list[k]
+                                                df_prognose.iloc[k + 7, i + 1] = individual_hwm_list[k] - \
+                                                                                 individual_per_fee_list[k]
                                             else:
                                                 df_prognose.iloc[k + 7, i + 1] = df_prognose.iloc[k + 7, i]
 
@@ -581,8 +628,20 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             # individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             fund_value += df_prognose.iloc[k + 7, i + 1]
                                             df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                            # individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
-                                            df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                            # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            #   new
+                                            # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                            df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                            sum_hwm = df_hwm.sum()
+                                            partial_df_hwm = df_hwm / sum_hwm
+                                            # The money amount that is substracted from the hwm and the outflow is then multiplied by the (hwm / next value)
+                                            new_df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                    partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+                                            df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            individual_hwm_list = list(df_hwm.iloc[:, 0])
+
                                             df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i]
 
                                         else:
@@ -590,12 +649,13 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
 
 
 
-                # if it is negative
+                # if the return is negative
                 else:
                     if j < 48:
 
                         if df_prognose.iloc[j + 7, i] > 0:
-                            df_prognose.iloc[j + 7, i + 1] = df_prognose.iloc[j + 7, i + 1] + df_prognose.iloc[j + 7, i] * (1 + (df_prognose.iloc[0, i + 1] / (1 - df_prognose.iloc[3, i + 1])))
+                            df_prognose.iloc[j + 7, i + 1] = df_prognose.iloc[j + 7, i] * (
+                                        1 + (df_prognose.iloc[0, i + 1]))
                         else:
                             # df_prognose.iloc[j + 6, i + 1] = df_prognose.iloc[j + 6, i]
                             df_prognose.iloc[j + 7, i + 2] = 0
@@ -606,7 +666,7 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                     if j == 48:
                         # initiate new lists. The individual high water mark. individual performance fee
                         fund_value = 0
-                        print(i + 1, individual_hwm_list[0])
+                        print(i + 1, individual_hwm_list)
                         if i == 0:
                             # individual_hwm_list[0] = hwm_start_value
                             for k in range(i + 2):
@@ -615,14 +675,29 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                         if k == (i + 1):
                                             individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             fund_value += df_prognose.iloc[k + 7, i + 1] + df_prognose.iloc[2, i + 1]
-
                                             df_prognose.iloc[6, i + 1] = fund_value
 
                                             # outflow in the lead serie for the hwm
-                                            individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1]
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                            # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            #   new
+                                            #   new
+                                            # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                            df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                            sum_hwm = df_hwm.sum()
+                                            partial_df_hwm = df_hwm / sum_hwm
+                                            # The money amount that is substracted from the hwm and the outflow is then multiplied by the (hwm / next value)
+                                            new_df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                        partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+                                            df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            individual_hwm_list = list(df_hwm.iloc[:, 0])
 
-                                            df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
-                                            df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[4, i + 1]
+                                            df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[
+                                                4, i + 1]
+
+
                                         else:
                                             input_value = individual_hwm_list[k]
                                             output_value = df_prognose.iloc[k + 7, i + 1]
@@ -632,7 +707,8 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             individual_per_fee_list[k] = performance_fee_fund
 
                                             if input_value >= 0:
-                                                df_prognose.iloc[k + 7, i + 1] = df_prognose.iloc[k + 7, i + 1] - performance_fee_fund
+                                                df_prognose.iloc[k + 7, i + 1] = df_prognose.iloc[
+                                                                                     k + 7, i + 1] - performance_fee_fund
                                             else:
                                                 df_prognose.iloc[k + 7, i + 1] = df_prognose.iloc[k + 7, i]
 
@@ -650,14 +726,28 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             # individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             fund_value += df_prognose.iloc[k + 7, i + 1]
                                             df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                            # individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
-                                            df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                            # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            #   new
+                                            # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                            df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                            sum_hwm = df_hwm.sum()
+                                            partial_df_hwm = df_hwm / sum_hwm
+                                            # The money amount that is substracted from the hwm and the outflow is then multiplied by the (hwm / next value)
+                                            new_df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                        partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+                                            df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            individual_hwm_list = list(df_hwm.iloc[:, 0])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                        partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+
                                             df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i]
 
                                         else:
                                             fund_value += df_prognose.iloc[k + 7, i + 1]
 
-                        # The columns after the first one
+                        # The columns after the first column
                         else:
                             for k in range(i + 2):
                                 if k <= 48:
@@ -666,9 +756,22 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             fund_value += df_prognose.iloc[k + 7, i + 1]
                                             df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                            individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
-                                            df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
-                                            df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[4, i + 1]
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                            # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            #   new
+                                            # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                            df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                            sum_hwm = df_hwm.sum()
+                                            partial_df_hwm = df_hwm / sum_hwm
+                                            # The money amount that is substracted from the hwm and the outflow is then multiplied by the (hwm / next value)
+                                            new_df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                        partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+                                            df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            individual_hwm_list = list(df_hwm.iloc[:, 0])
+
+                                            df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[
+                                                4, i + 1]
 
                                         else:
                                             input_value = individual_hwm_list[k]
@@ -679,7 +782,8 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             individual_per_fee_list[k] = performance_fee_fund
                                             individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             if input_value >= 0:
-                                                df_prognose.iloc[k + 7, i + 1] = individual_hwm_list[k] - individual_per_fee_list[k]
+                                                df_prognose.iloc[k + 7, i + 1] = individual_hwm_list[k] - \
+                                                                                 individual_per_fee_list[k]
                                             else:
                                                 df_prognose.iloc[k + 7, i + 1] = df_prognose.iloc[k + 7, i]
 
@@ -697,17 +801,24 @@ def calculate_read_csv_calculate(amount_running: object) -> object:
                                             # individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                             fund_value += df_prognose.iloc[k + 7, i + 1]
                                             df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                            # individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
-                                            df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                            # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                            #   new
+                                            # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                            df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                            sum_hwm = df_hwm.sum()
+                                            partial_df_hwm = df_hwm / sum_hwm
+                                            # The money amount that is substracted from the hwm and the outflow is then multiplied by the (hwm / next value)
+                                            new_df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            df_prognose.iloc[7:, i + 1] = df_prognose.iloc[7:, i + 1].values + (
+                                                        partial_df_hwm * df_prognose.iloc[2, i + 1]).squeeze()
+                                            df_hwm = df_hwm + (partial_df_hwm * df_prognose.iloc[2, i + 1])
+                                            individual_hwm_list = list(df_hwm.iloc[:, 0])
+
                                             df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i]
 
                                         else:
                                             fund_value += df_prognose.iloc[k + 7, i + 1]
-
-
-                                elif k == 49:
-                                    df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[1, i + 1] + df_prognose.iloc[2, i + 1]
-                                    index_on = 0
 
         df_prognose.drop(df_prognose.columns[len(df_prognose.columns)-1], axis=1, inplace=True)
         final_amount_list.append(df_prognose.iloc[4,48])
@@ -870,7 +981,7 @@ def calculate_read_csv():
                 if j == 48:
                     # initiate new lists. The individual high water mark. individual performance fee
                     fund_value = 0
-                    print(i + 1, individual_hwm_list[0])
+                    print(i + 1, individual_hwm_list)
                     if i == 0:
                         # individual_hwm_list[0] = hwm_start_value
                         for k in range(i + 2):
@@ -882,8 +993,23 @@ def calculate_read_csv():
                                         df_prognose.iloc[6, i + 1] = fund_value
 
                                         # outflow in the lead serie for the hwm
-                                        individual_hwm_list[0] += df_prognose.iloc[2, i + 1]
-                                        df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (
+                                        #             individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                        # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+
+                                        #   new
+                                        # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                        df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                        df_serie = df_prognose.iloc[7:, i + 1]
+                                        df_serie_part = df_serie / df_serie.sum()
+                                        df_serie_part_substract = df_serie_part * df_prognose.iloc[2, i + 1]
+                                        df_serie = df_serie + df_serie_part_substract
+                                        df_hwm = df_hwm.squeeze() + df_serie_part_substract.values * (df_hwm.squeeze() / df_serie.values).fillna(0)
+                                        df_prognose.iloc[7:, i + 1] = df_serie
+                                        individual_hwm_list = list(df_hwm.iloc[:])
+
+
+
                                         df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[4, i + 1]
                                     else:
                                         input_value = individual_hwm_list[k]
@@ -913,8 +1039,22 @@ def calculate_read_csv():
                                         # individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                         fund_value += df_prognose.iloc[k + 7, i + 1]
                                         df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                        # individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
-                                        df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (
+                                        #             individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                        # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+
+                                        #   new
+                                        # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                        df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                        df_serie = df_prognose.iloc[7:, i + 1]
+                                        df_serie_part = df_serie / df_serie.sum()
+                                        df_serie_part_substract = df_serie_part * df_prognose.iloc[2, i + 1]
+                                        df_serie = df_serie + df_serie_part_substract
+                                        df_hwm = df_hwm.squeeze() + df_serie_part_substract.values * (df_hwm.squeeze() / df_serie.values).fillna(0)
+                                        df_prognose.iloc[7:, i + 1] = df_serie
+                                        individual_hwm_list = list(df_hwm.iloc[:])
+
+
                                         df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i]
 
                                     else:
@@ -929,8 +1069,23 @@ def calculate_read_csv():
                                         individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                         fund_value += df_prognose.iloc[k + 7, i + 1]
                                         df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                        individual_hwm_list[0] += df_prognose.iloc[2, i + 1]
-                                        df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+
+                                        # #   old
+                                        # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                        # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+
+                                        #   new
+                                        # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                        df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                        df_serie = df_prognose.iloc[7:, i + 1]
+                                        df_serie_part = df_serie / df_serie.sum()
+                                        df_serie_part_substract = df_serie_part * df_prognose.iloc[2, i + 1]
+                                        df_serie = df_serie + df_serie_part_substract
+                                        df_hwm = df_hwm.squeeze() + df_serie_part_substract.values * (df_hwm.squeeze() / df_serie.values).fillna(0)
+                                        df_prognose.iloc[7:, i + 1] = df_serie
+                                        individual_hwm_list = list(df_hwm.iloc[:])
+
+
                                         df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i ] + df_prognose.iloc[4, i + 1]
 
 
@@ -961,8 +1116,21 @@ def calculate_read_csv():
                                         # individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                         fund_value += df_prognose.iloc[k + 7, i + 1]
                                         df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                        # individual_hwm_list[0] += (df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i]))
-                                        df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                        # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        #   new
+                                        # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                        df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                        df_serie = df_prognose.iloc[7:, i + 1]
+                                        df_serie_part = df_serie / df_serie.sum()
+                                        df_serie_part_substract = df_serie_part * df_prognose.iloc[2, i + 1]
+                                        df_serie = df_serie + df_serie_part_substract
+                                        df_hwm = df_hwm.squeeze() + df_serie_part_substract.values * (df_hwm.squeeze() / df_serie.values).fillna(0)
+                                        df_prognose.iloc[7:, i + 1] = df_serie
+                                        individual_hwm_list = list(df_hwm.iloc[:])
+
+
+
                                         df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i]
 
                                     else:
@@ -986,7 +1154,7 @@ def calculate_read_csv():
                 if j == 48:
                     # initiate new lists. The individual high water mark. individual performance fee
                     fund_value = 0
-                    print(i + 1, individual_hwm_list[0])
+                    print(i + 1, individual_hwm_list)
                     if i == 0:
                         # individual_hwm_list[0] = hwm_start_value
                         for k in range(i + 2):
@@ -999,8 +1167,21 @@ def calculate_read_csv():
 
                                         # outflow in the lead serie for the hwm
                                         # individual_hwm_list[0] += df_prognose.iloc[2, i + 1]
-                                        individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
-                                        df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                        # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        #   new
+                                        # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                        df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                        df_serie = df_prognose.iloc[7:, i + 1]
+                                        df_serie_part = df_serie / df_serie.sum()
+                                        df_serie_part_substract = df_serie_part * df_prognose.iloc[2, i + 1]
+                                        df_serie = df_serie + df_serie_part_substract
+                                        df_hwm = df_hwm.squeeze() + df_serie_part_substract.values * (df_hwm.squeeze() / df_serie.values).fillna(0)
+                                        df_prognose.iloc[7:, i + 1] = df_serie
+                                        individual_hwm_list = list(df_hwm.iloc[:])
+
+
+
                                         df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i] + df_prognose.iloc[4, i + 1]
 
 
@@ -1032,8 +1213,19 @@ def calculate_read_csv():
                                         # individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                         fund_value += df_prognose.iloc[k + 7, i + 1]
                                         df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                        individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
-                                        df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                        # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        #   new
+                                        # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                        df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                        df_serie = df_prognose.iloc[7:, i + 1]
+                                        df_serie_part = df_serie / df_serie.sum()
+                                        df_serie_part_substract = df_serie_part * df_prognose.iloc[2, i + 1]
+                                        df_serie = df_serie + df_serie_part_substract
+                                        df_hwm = df_hwm.squeeze() + df_serie_part_substract.values * (df_hwm.squeeze() / df_serie.values).fillna(0)
+                                        df_prognose.iloc[7:, i + 1] = df_serie
+                                        individual_hwm_list = list(df_hwm.iloc[:])
+
                                         df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i]
 
                                     else:
@@ -1048,8 +1240,21 @@ def calculate_read_csv():
                                         individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                         fund_value += df_prognose.iloc[k + 7, i + 1]
                                         df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                        individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
-                                        df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                        # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        #   new
+                                        # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                        df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                        df_serie = df_prognose.iloc[7:, i + 1]
+                                        df_serie_part = df_serie / df_serie.sum()
+                                        df_serie_part_substract = df_serie_part * df_prognose.iloc[2, i + 1]
+                                        df_serie = df_serie + df_serie_part_substract
+                                        df_hwm = df_hwm.squeeze() + df_serie_part_substract.values * (df_hwm.squeeze() / df_serie.values).fillna(0)
+                                        df_prognose.iloc[7:, i + 1] = df_serie
+                                        individual_hwm_list = list(df_hwm.iloc[:])
+
+
+
                                         df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i ] + df_prognose.iloc[4, i + 1]
 
                                     else:
@@ -1079,8 +1284,21 @@ def calculate_read_csv():
                                         # individual_hwm_list[k] = df_prognose.iloc[k + 7, i + 1]
                                         fund_value += df_prognose.iloc[k + 7, i + 1]
                                         df_prognose.iloc[6, i + 1] = fund_value + df_prognose.iloc[2, i + 1]
-                                        individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
-                                        df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        # individual_hwm_list[0] += df_prognose.iloc[2, i + 1] * (individual_hwm_list[0] / df_prognose.iloc[7, i + 1])
+                                        # df_prognose.iloc[7, i + 1] = df_prognose.iloc[7, i + 1] + df_prognose.iloc[2, i + 1]
+                                        #   new
+                                        # There are K series calculated, the outflow is substracted from the series by the money amount of the series / total amount of all the series,
+                                        df_hwm = pd.DataFrame(individual_hwm_list[:])
+                                        df_serie = df_prognose.iloc[7:, i + 1]
+                                        df_serie_part = df_serie / df_serie.sum()
+                                        df_serie_part_substract = df_serie_part * df_prognose.iloc[2, i + 1]
+                                        df_serie = df_serie + df_serie_part_substract
+                                        df_hwm = df_hwm.squeeze() + df_serie_part_substract.values * (df_hwm.squeeze() / df_serie.values).fillna(0)
+                                        df_prognose.iloc[7:, i + 1] = df_serie
+                                        individual_hwm_list = list(df_hwm.iloc[:])
+
+
+
                                         df_prognose.iloc[5, i + 1] = df_prognose.iloc[5, i]
 
                                     else:
